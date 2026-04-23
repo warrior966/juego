@@ -6,11 +6,14 @@ const io = require('socket.io')(http, {
 });
 const path = require('path');
 
+// Servir archivos de la carpeta 'public'
 app.use(express.static(path.join(__dirname, 'public')));
 
 let rooms = {};
 
 io.on('connection', (socket) => {
+    console.log('Jugador conectado:', socket.id);
+
     socket.on('createRoom', () => {
         const roomId = Math.random().toString(36).substring(2, 7).toUpperCase();
         rooms[roomId] = { players: {} };
@@ -29,6 +32,8 @@ io.on('connection', (socket) => {
             };
             socket.emit('joinedSuccess', roomId);
             io.to(roomId).emit('updatePlayers', rooms[roomId].players);
+        } else {
+            socket.emit('errorMsg', 'La sala no existe');
         }
     });
 
@@ -65,5 +70,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor activo en puerto ${PORT}`);
+    console.log(`Servidor escuchando en puerto ${PORT}`);
 });
