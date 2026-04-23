@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Battle iPad</title>
+    <style>
+        body { margin: 0; background: #000; color: white; font-family: sans-serif; touch-action: none; }
+        #ui { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); z-index: 10; }
+        .panel { background: #222; padding: 25px; border-radius: 15px; text-align: center; border: 1px solid #007bff; width: 80%; max-width: 300px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #007bff; border: none; color: white; font-weight: bold; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div id="auth-panel" class="panel">
+            <h2>LOGIN</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="pass" placeholder="Password">
+            <button onclick="handleAuth()">ENTRAR</button>
+        </div>
+        <div id="room-panel" class="panel" style="display:none">
+            <h2>SALA</h2>
+            <button onclick="createRoom()">CREAR SALA</button>
+            <input type="text" id="roomInput" placeholder="CÓDIGO">
+            <button onclick="joinRoom()">UNIRSE</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLUU7XWS6TTByiGd-rtBCPZNzKvvRcL9Q",
+            authDomain: "juego-b85b7.firebaseapp.com",
+            projectId: "juego-b85b7",
+            appId: "1:714273620829:web:1e8d68161db2711270deb4"
+        };
+        firebase.initializeApp(firebaseConfig);
+        async function handleAuth() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('pass').value;
+            try {
+                await firebase.auth().signInWithEmailAndPassword(e, p);
+                document.getElementById('auth-panel').style.display='none';
+                document.getElementById('room-panel').style.display='block';
+            } catch(err) { alert(err.message); }
+        }
+    </script>
+    <script src="game.js"></script>
+</body>
+</html>
