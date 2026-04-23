@@ -1,7 +1,6 @@
 {
   "name": "juego-battle-3d",
   "version": "1.0.0",
-  "description": "Juego 3D para iPad",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -9,8 +8,5 @@
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.6.1"
-  },
-  "engines": {
-    "node": ">=14.0.0"
   }
 }
