@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Battle iPad Edition</title>
+    <title>3D Battle iPad</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; }
         #ui-container { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); z-index: 100; }
         .panel { background: #222; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #007bff; width: 280px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; font-size: 16px; }
         button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; }
-        
         #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; }
         #fire-btn { position: absolute; bottom: 40px; right: 40px; width: 90px; height: 90px; background: rgba(255,0,0,0.6); border-radius: 50%; display: none; justify-content: center; align-items: center; border: 3px solid white; color: white; font-weight: bold; -webkit-user-select: none; z-index: 10; }
         #game-info { position: absolute; top: 10px; left: 10px; color: white; display: none; pointer-events: none; }
@@ -31,7 +30,6 @@
             <button onclick="window.joinRoom()">UNIRSE</button>
         </div>
     </div>
-
     <div id="crosshair"></div>
     <div id="fire-btn" ontouchstart="window.shoot()">FIRE</div>
     <div id="game-info">SALA: <span id="currentRoomCode"></span></div>
@@ -40,7 +38,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBLUU7XWS6TTByiGd-rtBCPZNzKvvRcL9Q",
@@ -50,7 +47,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         async function handleAuth() {
-            const e = document.getElementById('email').value.toLowerCase();
+            const e = document.getElementById('email').value.trim().toLowerCase();
             const p = document.getElementById('password').value;
             try {
                 await firebase.auth().signInWithEmailAndPassword(e,p);
