@@ -1,9 +1,7 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http, { 
-    cors: { origin: "*", methods: ["GET", "POST"] } 
-});
+const io = require('socket.io')(http, { cors: { origin: "*" } });
 const path = require('path');
 const https = require('https');
 
@@ -26,7 +24,9 @@ io.on('connection', (socket) => {
                 x: Math.random() * 20 - 10, 
                 z: Math.random() * 20 - 10, 
                 color: Math.random() * 0xffffff,
-                health: 100 
+                health: 100,
+                kills: 0,
+                deaths: 0
             };
             socket.emit('joinedSuccess', roomId);
             io.to(roomId).emit('updatePlayers', rooms[roomId].players);
@@ -42,15 +42,22 @@ io.on('connection', (socket) => {
     });
 
     socket.on('shoot', (data) => {
-        const { roomId, targetId } = data;
-        if (rooms[roomId] && rooms[roomId].players[targetId]) {
-            rooms[roomId].players[targetId].health -= 25;
-            if (rooms[roomId].players[targetId].health <= 0) {
-                rooms[roomId].players[targetId].health = 100;
-                rooms[roomId].players[targetId].x = Math.random() * 20 - 10;
-                rooms[roomId].players[targetId].z = Math.random() * 20 - 10;
+        const { roomId, targetId, damage } = data;
+        const room = rooms[roomId];
+        if (room && room.players[targetId]) {
+            room.players[targetId].health -= damage;
+            
+            if (room.players[targetId].health <= 0) {
+                room.players[targetId].health = 100;
+                room.players[targetId].deaths += 1;
+                room.players[targetId].x = Math.random() * 20 - 10;
+                room.players[targetId].z = Math.random() * 20 - 10;
+                
+                if (room.players[socket.id]) {
+                    room.players[socket.id].kills += 1;
+                }
             }
-            io.to(roomId).emit('updatePlayers', rooms[roomId].players);
+            io.to(roomId).emit('updatePlayers', room.players);
         }
     });
 
@@ -65,11 +72,8 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor activo en puerto ${PORT}`);
-});
+http.listen(PORT, '0.0.0.0', () => console.log(`Servidor en puerto ${PORT}`));
 
-// AUTO-PING para Render (Usa tu URL real)
 setInterval(() => {
     https.get('https://juego-b85b7.onrender.com', (res) => {}).on('error', (e) => {});
 }, 600000);
