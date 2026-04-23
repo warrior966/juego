@@ -1,112 +1,119 @@
-// Conectar con el servidor de Render automáticamente
-const socket = io(); 
-
-// Variables globales para el juego
+const socket = io();
 let currentRoomId = null;
-let players = {};
 let playerMeshes = {};
 
-// 1. FUNCIONES PARA EL MENÚ (Las que llama el HTML)
-// Estas funciones deben estar en el "window" para que el HTML las vea bien
-window.createRoom = function() {
-    console.log("Intentando crear sala...");
-    socket.emit('createRoom');
-};
-
-window.joinRoom = function() {
-    const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-    if (code) {
-        console.log("Intentando unirse a sala:", code);
-        socket.emit('joinRoom', code);
-    } else {
-        alert("Por favor, introduce un código.");
-    }
-};
-
-// 2. ESCUCHA DE EVENTOS DEL SERVIDOR
-socket.on('roomCreated', (id) => {
-    console.log("Sala creada con éxito:", id);
-    initGame(id);
-});
-
-socket.on('joinedSuccess', (id) => {
-    console.log("Unido a la sala:", id);
-    initGame(id);
-});
-
-socket.on('errorMsg', (msg) => {
-    alert(msg);
-});
-
-// 3. INICIALIZACIÓN DEL MUNDO 3D
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x111111);
-
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-// Luces
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(5, 10, 7.5);
 scene.add(new THREE.AmbientLight(0x404040));
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5, 10, 5);
 scene.add(light);
+scene.add(new THREE.GridHelper(100, 40, 0x007bff, 0x222222));
 
-// Suelo (Grid)
-const grid = new THREE.GridHelper(100, 20, 0x007bff, 0x222222);
-scene.add(grid);
+const raycaster = new THREE.Raycaster();
+const center = new THREE.Vector2(0, 0);
+
+// --- NUEVO: ROTACIÓN TÁCTIL ---
+let isTouching = false;
+let previousTouch = { x: 0, y: 0 };
+let lon = 0, lat = 0; // Longitud y Latitud para la rotación
+
+window.addEventListener('touchstart', (e) => {
+    if (e.target.id === 'fire-btn') return; // Si toca el botón de disparo, no rotar
+    isTouching = true;
+    previousTouch.x = e.touches[0].pageX;
+    previousTouch.y = e.touches[0].pageY;
+}, { passive: false });
+
+window.addEventListener('touchmove', (e) => {
+    if (!isTouching) return;
+    const touch = e.touches[0];
+    const deltaX = touch.pageX - previousTouch.x;
+    const deltaY = touch.pageY - previousTouch.y;
+
+    lon += deltaX * 0.2; // Sensibilidad horizontal
+    lat -= deltaY * 0.2; // Sensibilidad vertical
+    lat = Math.max(-85, Math.min(85, lat)); // Limitar rotación arriba/abajo
+
+    previousTouch.x = touch.pageX;
+    previousTouch.y = touch.pageY;
+}, { passive: false });
+
+window.addEventListener('touchend', () => isTouching = false);
+
+function updateCameraRotation() {
+    const phi = THREE.MathUtils.degToRad(90 - lat);
+    const theta = THREE.MathUtils.degToRad(lon);
+    
+    const target = new THREE.Vector3();
+    target.setFromSphericalCoords(1, phi, theta).add(camera.position);
+    camera.lookAt(target);
+}
+// -----------------------------
+
+window.createRoom = () => socket.emit('createRoom');
+window.joinRoom = () => socket.emit('joinRoom', document.getElementById('roomCodeInput').value.toUpperCase());
+
+window.shoot = () => {
+    if(!currentRoomId) return;
+    scene.background = new THREE.Color(0x550000);
+    setTimeout(() => scene.background = new THREE.Color(0x000000), 50);
+
+    raycaster.setFromCamera(center, camera);
+    const meshes = Object.values(playerMeshes).filter(m => m !== playerMeshes[socket.id]);
+    const intersects = raycaster.intersectObjects(meshes);
+
+    if (intersects.length > 0) {
+        const hitId = Object.keys(playerMeshes).find(id => playerMeshes[id] === intersects[0].object);
+        socket.emit('shoot', { roomId: currentRoomId, targetId: hitId });
+    }
+};
+
+socket.on('roomCreated', (id) => initGame(id));
+socket.on('joinedSuccess', (id) => initGame(id));
 
 function initGame(id) {
     currentRoomId = id;
-    
-    // Ocultar la interfaz
     document.getElementById('ui-container').style.display = 'none';
+    document.getElementById('crosshair').style.display = 'block';
+    document.getElementById('fire-btn').style.display = 'flex';
     document.getElementById('game-info').style.display = 'block';
     document.getElementById('currentRoomCode').innerText = id;
-    
-    // Añadir el lienzo del juego al HTML
     document.body.appendChild(renderer.domElement);
-    
-    camera.position.set(0, 5, 10);
-    camera.lookAt(0, 0, 0);
-    
+    camera.position.set(0, 2, 8);
     animate();
 }
 
-// 4. ACTUALIZAR JUGADORES
-socket.on('updatePlayers', (serverPlayers) => {
-    players = serverPlayers;
-    
+socket.on('updatePlayers', (players) => {
     for (let id in players) {
         if (!playerMeshes[id]) {
-            // Crear el cubo para el nuevo jugador
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
-            const material = new THREE.MeshStandardMaterial({ color: players[id].color });
-            playerMeshes[id] = new THREE.Mesh(geometry, material);
+            playerMeshes[id] = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({color: players[id].color}));
             scene.add(playerMeshes[id]);
         }
-        // Mover el cubo a su posición
-        playerMeshes[id].position.set(players[id].x, 0.5, players[id].z);
+        playerMeshes[id].position.lerp(new THREE.Vector3(players[id].x, 0.5, players[id].z), 0.2);
+        const s = players[id].health / 100;
+        playerMeshes[id].scale.set(s, s, s);
     }
-
-    // Eliminar cubos de jugadores que se fueron
     for (let id in playerMeshes) {
-        if (!players[id]) {
-            scene.remove(playerMeshes[id]);
-            delete playerMeshes[id];
-        }
+        if (!players[id]) { scene.remove(playerMeshes[id]); delete playerMeshes[id]; }
     }
 });
 
-// 5. BUCLE DE ANIMACIÓN
+window.onkeydown = (e) => {
+    if(!currentRoomId) return;
+    const speed = 0.5;
+    if(e.key === 'w') camera.translateZ(-speed);
+    if(e.key === 's') camera.translateZ(speed);
+    if(e.key === 'a') camera.translateX(-speed);
+    if(e.key === 'd') camera.translateX(speed);
+    socket.emit('move', { roomId: currentRoomId, pos: { x: camera.position.x, z: camera.position.z } });
+};
+
 function animate() {
     requestAnimationFrame(animate);
+    updateCameraRotation(); // Aplicar rotación táctil
     renderer.render(scene, camera);
 }
-
-// Ajustar ventana si se gira el iPad
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
