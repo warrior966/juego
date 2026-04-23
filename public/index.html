@@ -1,49 +1,47 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Battle Online</title>
+    <title>3D Battle iPad Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; color: white; touch-action: none; }
-        #ui-container { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.85); z-index: 100; }
-        .panel { background: #1a1a1a; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #333; width: 85%; max-width: 350px; }
-        h1 { color: #007bff; font-size: 24px; margin-bottom: 20px; }
-        input { display: block; width: 100%; margin: 10px 0; padding: 15px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; box-sizing: border-box; font-size: 16px; }
-        button { background: #007bff; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px; }
-        button:hover { background: #0056b3; }
-        #game-info { position: absolute; top: 20px; left: 20px; z-index: 10; display: none; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; border: 1px solid #007bff; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; }
+        #ui-container { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); z-index: 100; }
+        .panel { background: #222; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #007bff; width: 280px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; }
+        
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; }
+        #fire-btn { position: absolute; bottom: 40px; right: 40px; width: 90px; height: 90px; background: rgba(255,0,0,0.6); border-radius: 50%; display: none; justify-content: center; align-items: center; border: 3px solid white; color: white; font-weight: bold; -webkit-user-select: none; z-index: 10; }
+        #game-info { position: absolute; top: 10px; left: 10px; color: white; display: none; pointer-events: none; }
     </style>
 </head>
 <body>
-
     <div id="ui-container">
         <div id="auth-panel" class="panel">
-            <h1>BATTLE 3D</h1>
-            <input type="email" id="email" placeholder="Correo Electrónico" autocapitalize="none">
-            <input type="password" id="password" placeholder="Contraseña">
-            <button onclick="handleAuth()">ENTRAR / REGISTRARSE</button>
-            <p style="font-size: 12px; color: #666; margin-top: 10px;">Si no tienes cuenta, se creará una automáticamente.</p>
+            <h2 style="color:white">LOGIN</h2>
+            <input type="email" id="email" placeholder="Email" autocapitalize="none">
+            <input type="password" id="password" placeholder="Pass">
+            <button onclick="handleAuth()">ENTRAR</button>
         </div>
-
-        <div id="room-panel" class="panel" style="display:none;">
-            <h1>MENÚ DE SALAS</h1>
-            <button onclick="createRoom()" style="background: #28a745;">CREAR SALA NUEVA</button>
-            <div style="margin: 15px 0; color: #555;">— O —</div>
-            <input type="text" id="roomCodeInput" placeholder="CÓDIGO DE SALA" style="text-align: center; text-transform: uppercase;">
-            <button onclick="joinRoom()">UNIRSE A SALA</button>
+        <div id="room-panel" class="panel" style="display:none">
+            <h2 style="color:white">SALA</h2>
+            <button onclick="window.createRoom()">CREAR</button>
+            <input type="text" id="roomCodeInput" placeholder="CÓDIGO">
+            <button onclick="window.joinRoom()">UNIRSE</button>
         </div>
     </div>
 
-    <div id="game-info">SALA: <strong id="currentRoomCode">---</strong></div>
+    <div id="crosshair"></div>
+    <div id="fire-btn" ontouchstart="window.shoot()">FIRE</div>
+    <div id="game-info">SALA: <span id="currentRoomCode"></span></div>
 
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
+    
     <script>
-        // Tu configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBLUU7XWS6TTByiGd-rtBCPZNzKvvRcL9Q",
             authDomain: "juego-b85b7.firebaseapp.com",
@@ -51,39 +49,14 @@
             appId: "1:714273620829:web:1e8d68161db2711270deb4"
         };
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-
         async function handleAuth() {
-            const email = document.getElementById('email').value.trim().toLowerCase();
-            const password = document.getElementById('password').value;
-
-            if (!email || password.length < 6) {
-                return alert("Email válido y contraseña de min. 6 caracteres.");
-            }
-
+            const e = document.getElementById('email').value.toLowerCase();
+            const p = document.getElementById('password').value;
             try {
-                // Intentar Login
-                await auth.signInWithEmailAndPassword(email, password);
-                showRoomPanel();
-            } catch (error) {
-                // Si el error es por credenciales inválidas o usuario no encontrado, registramos
-                if (error.code === 'auth/invalid-login-credentials' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-                    try {
-                        await auth.createUserWithEmailAndPassword(email, password);
-                        alert("¡Cuenta creada con éxito!");
-                        showRoomPanel();
-                    } catch (regError) {
-                        alert("Error al crear cuenta: " + regError.message);
-                    }
-                } else {
-                    alert("Error: " + error.message);
-                }
-            }
-        }
-
-        function showRoomPanel() {
-            document.getElementById('auth-panel').style.display = 'none';
-            document.getElementById('room-panel').style.display = 'block';
+                await firebase.auth().signInWithEmailAndPassword(e,p);
+                document.getElementById('auth-panel').style.display='none';
+                document.getElementById('room-panel').style.display='block';
+            } catch(err) { alert(err.message); }
         }
     </script>
     <script src="game.js"></script>
