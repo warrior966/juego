@@ -69,7 +69,7 @@ http.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor activo en puerto ${PORT}`);
 });
 
-// AUTO-PING para Render
+// AUTO-PING para Render (Usa tu URL real)
 setInterval(() => {
     https.get('https://juego-b85b7.onrender.com', (res) => {}).on('error', (e) => {});
 }, 600000);
