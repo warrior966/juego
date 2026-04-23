@@ -3,53 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Battle Warzone</title>
+    <title>WARZONE 3D | EVOLUTION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        /* ... MANTENER TODOS LOS ESTILOS ANTERIORES ... */
-        
-        .btn-google {
-            width: 100%;
-            padding: 12px;
-            background: white;
-            color: #444;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-red: #ff0055;
+            --glass: rgba(15, 15, 25, 0.85);
         }
-        .btn-google img { width: 18px; }
+
+        body { 
+            margin: 0; overflow: hidden; background: #050505; 
+            font-family: 'Rajdhani', sans-serif; touch-action: none; color: white;
+        }
+
+        /* Contenedor Principal con Efecto Glassmorphism */
+        #ui-container { 
+            position: absolute; width: 100%; height: 100%; 
+            display: flex; justify-content: center; align-items: center; 
+            background: radial-gradient(circle, rgba(0,212,255,0.1) 0%, rgba(0,0,0,1) 100%);
+            z-index: 100; backdrop-filter: blur(5px);
+        }
+
+        .panel { 
+            background: var(--glass); 
+            padding: 40px; border-radius: 20px; text-align: center; 
+            border: 1px solid rgba(0, 212, 255, 0.3); 
+            width: 340px; box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 212, 255, 0.1);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        h2 { 
+            font-family: 'Orbitron', sans-serif; font-size: 24px; 
+            margin-bottom: 30px; text-transform: uppercase; letter-spacing: 4px;
+            color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        input { 
+            width: 100%; padding: 15px; margin: 12px 0; border-radius: 8px; 
+            border: 1px solid #333; background: rgba(255,255,255,0.05); 
+            color: white; font-size: 16px; transition: 0.3s;
+        }
+
+        input:focus { border-color: var(--neon-blue); outline: none; background: rgba(255,255,255,0.1); }
+
+        .btn-main { 
+            width: 100%; padding: 15px; background: var(--neon-blue); color: #000; 
+            border: none; border-radius: 8px; font-weight: 700; font-size: 16px; 
+            cursor: pointer; text-transform: uppercase; letter-spacing: 2px;
+            transition: 0.3s; margin-top: 10px;
+        }
+
+        .btn-main:active { transform: scale(0.98); filter: brightness(1.2); }
+
+        .btn-google {
+            width: 100%; padding: 12px; background: transparent; color: white;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+            font-weight: 500; cursor: pointer; margin-top: 15px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-google:hover { background: rgba(255,255,255,0.05); border-color: white; }
+
+        .divider { margin: 25px 0; color: #555; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* HUD ESTILO MILITAR */
+        #hud { 
+            position: absolute; top: 25px; right: 25px; 
+            background: rgba(0,0,0,0.7); padding: 15px; border-left: 4px solid var(--neon-blue);
+            font-family: 'Orbitron', sans-serif; display: none; min-width: 150px;
+        }
+
+        #weapon-dock { 
+            position: absolute; top: 25px; left: 50%; transform: translateX(-50%); 
+            display: none; gap: 15px; z-index: 30; 
+        }
+
+        .weapon-btn { 
+            width: 70px; height: 70px; background: rgba(20,20,25,0.9); 
+            border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 10px; transition: 0.3s;
+        }
+
+        .active-weapon { border: 2px solid var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); }
+
+        #fire-btn { 
+            position: absolute; bottom: 180px; right: 60px; width: 110px; height: 110px; 
+            background: radial-gradient(circle, var(--neon-red) 0%, #80002b 100%);
+            border: 4px solid white; border-radius: 50%; display: none; 
+            justify-content: center; align-items: center; font-weight: 900;
+            box-shadow: 0 0 30px rgba(255,0,85,0.4); z-index: 30;
+        }
+
+        #crosshair { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            color: var(--neon-blue); font-size: 30px; pointer-events: none; display: none;
+            opacity: 0.7;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <div id="ui-container">
         <div id="auth-panel" class="panel">
-            <h2>WARZONE LOGIN</h2>
-            <input type="email" id="email" placeholder="Correo Electrónico">
-            <input type="password" id="password" placeholder="Contraseña">
-            <button class="btn-main" onclick="handleAuth()">ENTRAR PARTIDA</button>
-            
-            <div class="divider">O CONTINÚA CON</div>
-            
+            <h2>OPERATIONS</h2>
+            <input type="email" id="email" placeholder="EMAIL_ADDRESS">
+            <input type="password" id="password" placeholder="ACCESS_CODE">
+            <button class="btn-main" onclick="handleAuth()">INITIALIZE</button>
+            <div class="divider">OR SECURE LOGIN</div>
             <button class="btn-google" onclick="loginWithGoogle()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" alt="Google">
-                INICIAR CON GOOGLE
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18"> GOOGLE_ID
             </button>
         </div>
 
         <div id="room-panel" class="panel" style="display:none">
-            <h2>SALA DE ESPERA</h2>
-            <button class="btn-secondary" onclick="window.createRoom()">+ CREAR NUEVA SALA</button>
-            <div class="divider">O ÚNETE A UNA</div>
-            <input type="text" id="roomCodeInput" placeholder="CÓDIGO DE SALA" maxlength="5">
-            <button class="btn-main" onclick="window.joinRoom()">UNIRSE AHORA</button>
+            <h2>COMMAND_CENTER</h2>
+            <button class="btn-main" style="background:#28a745" onclick="window.createRoom()">CREATE NEW MISSION</button>
+            <div class="divider">SECTOR_JOIN</div>
+            <input type="text" id="roomCodeInput" placeholder="ENTER CODE">
+            <button class="btn-main" onclick="window.joinRoom()">JOIN SECTOR</button>
         </div>
     </div>
+
+    <div id="hud">
+        <div style="font-size: 10px; color: var(--neon-blue);">SQUAD_STATS</div>
+        <div id="scores" style="margin-top:10px;"></div>
+    </div>
+
+    <div id="crosshair">⌖</div>
+    <div id="weapon-dock">
+        <div class="weapon-btn active-weapon" id="w1" onclick="setWeapon(0)">🔫<br>LIGHT</div>
+        <div class="weapon-btn" id="w2" onclick="setWeapon(1)">💥<br>HEAVY</div>
+        <div class="weapon-btn" id="w3" onclick="setWeapon(2)">🎯<br>SNIPER</div>
+    </div>
+
+    <div id="joystick-move"></div>
+    <div id="joystick-look"></div>
+    <div id="fire-btn" ontouchstart="window.shoot()">FIRE</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.1/nipplejs.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
@@ -57,8 +150,8 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="game.js"></script>
-    
     <script>
+        // ... (Mantén aquí el mismo script de Firebase del paso anterior) ...
         const firebaseConfig = {
             apiKey: "AIzaSyBLUU7XWS6TTByiGd-rtBCPZNzKvvRcL9Q",
             authDomain: "juego-b85b7.firebaseapp.com",
@@ -66,36 +159,18 @@
             appId: "1:714273620829:web:1e8d68161db2711270deb4"
         };
         firebase.initializeApp(firebaseConfig);
-
-        // LOGIN TRADICIONAL
         async function handleAuth() {
             const e = document.getElementById('email').value.trim();
             const p = document.getElementById('password').value;
-            try {
-                await firebase.auth().signInWithEmailAndPassword(e,p);
-                accessGranted();
-            } catch(err) {
-                try {
-                    await firebase.auth().createUserWithEmailAndPassword(e,p);
-                    accessGranted();
-                } catch(e2) { alert("Error: " + e2.message); }
+            try { await firebase.auth().signInWithEmailAndPassword(e,p); access(); } catch(err) {
+                try { await firebase.auth().createUserWithEmailAndPassword(e,p); access(); } catch(e2) { alert(e2.message); }
             }
         }
-
-        // NUEVO: LOGIN CON GOOGLE
         async function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                // En iPad/Móvil es mejor usar signInWithRedirect, 
-                // pero signInWithPopup es más rápido para probar.
-                await firebase.auth().signInWithPopup(provider);
-                accessGranted();
-            } catch (error) {
-                alert("Error con Google: " + error.message);
-            }
+            try { await firebase.auth().signInWithPopup(provider); access(); } catch (e) { alert(e.message); }
         }
-
-        function accessGranted() {
+        function access() {
             document.getElementById('auth-panel').style.display='none';
             document.getElementById('room-panel').style.display='block';
         }
