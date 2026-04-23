@@ -21,12 +21,10 @@ io.on('connection', (socket) => {
         if (rooms[roomId]) {
             socket.join(roomId);
             rooms[roomId].players[socket.id] = { 
-                x: Math.random() * 20 - 10, 
-                z: Math.random() * 20 - 10, 
+                x: Math.random() * 40 - 20, 
+                z: Math.random() * 40 - 20, 
                 color: Math.random() * 0xffffff,
-                health: 100,
-                kills: 0,
-                deaths: 0
+                health: 100, kills: 0, deaths: 0 
             };
             socket.emit('joinedSuccess', roomId);
             io.to(roomId).emit('updatePlayers', rooms[roomId].players);
@@ -46,16 +44,12 @@ io.on('connection', (socket) => {
         const room = rooms[roomId];
         if (room && room.players[targetId]) {
             room.players[targetId].health -= damage;
-            
             if (room.players[targetId].health <= 0) {
                 room.players[targetId].health = 100;
                 room.players[targetId].deaths += 1;
-                room.players[targetId].x = Math.random() * 20 - 10;
-                room.players[targetId].z = Math.random() * 20 - 10;
-                
-                if (room.players[socket.id]) {
-                    room.players[socket.id].kills += 1;
-                }
+                room.players[targetId].x = Math.random() * 40 - 20;
+                room.players[targetId].z = Math.random() * 40 - 20;
+                if (room.players[socket.id]) room.players[socket.id].kills += 1;
             }
             io.to(roomId).emit('updatePlayers', room.players);
         }
@@ -74,6 +68,7 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, '0.0.0.0', () => console.log(`Servidor en puerto ${PORT}`));
 
+// EL TRUCO PARA RENDER: Mantener despierto cada 10 min
 setInterval(() => {
     https.get('https://juego-b85b7.onrender.com', (res) => {}).on('error', (e) => {});
 }, 600000);
