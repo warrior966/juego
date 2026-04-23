@@ -1,7 +1,6 @@
 const socket = io();
 let currentRoomId = null;
 let playerMeshes = {};
-
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -16,13 +15,13 @@ scene.add(new THREE.GridHelper(100, 40, 0x007bff, 0x222222));
 const raycaster = new THREE.Raycaster();
 const center = new THREE.Vector2(0, 0);
 
-// --- NUEVO: ROTACIÓN TÁCTIL ---
+// ROTACIÓN TÁCTIL
 let isTouching = false;
 let previousTouch = { x: 0, y: 0 };
-let lon = 0, lat = 0; // Longitud y Latitud para la rotación
+let lon = 0, lat = 0;
 
 window.addEventListener('touchstart', (e) => {
-    if (e.target.id === 'fire-btn') return; // Si toca el botón de disparo, no rotar
+    if (e.target.id === 'fire-btn') return;
     isTouching = true;
     previousTouch.x = e.touches[0].pageX;
     previousTouch.y = e.touches[0].pageY;
@@ -30,16 +29,11 @@ window.addEventListener('touchstart', (e) => {
 
 window.addEventListener('touchmove', (e) => {
     if (!isTouching) return;
-    const touch = e.touches[0];
-    const deltaX = touch.pageX - previousTouch.x;
-    const deltaY = touch.pageY - previousTouch.y;
-
-    lon += deltaX * 0.2; // Sensibilidad horizontal
-    lat -= deltaY * 0.2; // Sensibilidad vertical
-    lat = Math.max(-85, Math.min(85, lat)); // Limitar rotación arriba/abajo
-
-    previousTouch.x = touch.pageX;
-    previousTouch.y = touch.pageY;
+    lon += (e.touches[0].pageX - previousTouch.x) * 0.2;
+    lat -= (e.touches[0].pageY - previousTouch.y) * 0.2;
+    lat = Math.max(-85, Math.min(85, lat));
+    previousTouch.x = e.touches[0].pageX;
+    previousTouch.y = e.touches[0].pageY;
 }, { passive: false });
 
 window.addEventListener('touchend', () => isTouching = false);
@@ -47,12 +41,9 @@ window.addEventListener('touchend', () => isTouching = false);
 function updateCameraRotation() {
     const phi = THREE.MathUtils.degToRad(90 - lat);
     const theta = THREE.MathUtils.degToRad(lon);
-    
-    const target = new THREE.Vector3();
-    target.setFromSphericalCoords(1, phi, theta).add(camera.position);
+    const target = new THREE.Vector3().setFromSphericalCoords(1, phi, theta).add(camera.position);
     camera.lookAt(target);
 }
-// -----------------------------
 
 window.createRoom = () => socket.emit('createRoom');
 window.joinRoom = () => socket.emit('joinRoom', document.getElementById('roomCodeInput').value.toUpperCase());
@@ -61,19 +52,14 @@ window.shoot = () => {
     if(!currentRoomId) return;
     scene.background = new THREE.Color(0x550000);
     setTimeout(() => scene.background = new THREE.Color(0x000000), 50);
-
     raycaster.setFromCamera(center, camera);
     const meshes = Object.values(playerMeshes).filter(m => m !== playerMeshes[socket.id]);
     const intersects = raycaster.intersectObjects(meshes);
-
     if (intersects.length > 0) {
         const hitId = Object.keys(playerMeshes).find(id => playerMeshes[id] === intersects[0].object);
         socket.emit('shoot', { roomId: currentRoomId, targetId: hitId });
     }
 };
-
-socket.on('roomCreated', (id) => initGame(id));
-socket.on('joinedSuccess', (id) => initGame(id));
 
 function initGame(id) {
     currentRoomId = id;
@@ -86,6 +72,9 @@ function initGame(id) {
     camera.position.set(0, 2, 8);
     animate();
 }
+
+socket.on('roomCreated', (id) => initGame(id));
+socket.on('joinedSuccess', (id) => initGame(id));
 
 socket.on('updatePlayers', (players) => {
     for (let id in players) {
@@ -114,6 +103,6 @@ window.onkeydown = (e) => {
 
 function animate() {
     requestAnimationFrame(animate);
-    updateCameraRotation(); // Aplicar rotación táctil
+    updateCameraRotation();
     renderer.render(scene, camera);
 }
