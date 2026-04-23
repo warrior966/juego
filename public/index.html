@@ -3,46 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Battle iPad</title>
+    <title>3D Battle Pro Mobile</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         #ui-container { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); z-index: 100; }
-        .panel { background: #222; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #007bff; width: 280px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; font-size: 16px; background: #333; color: white; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .link-btn { background: none; color: #007bff; border: none; font-size: 14px; margin-top: 15px; text-decoration: underline; cursor: pointer; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; }
-        #fire-btn { position: absolute; bottom: 40px; right: 40px; width: 90px; height: 90px; background: rgba(255,0,0,0.6); border-radius: 50%; display: none; justify-content: center; align-items: center; border: 3px solid white; color: white; font-weight: bold; -webkit-user-select: none; z-index: 10; }
-        #game-info { position: absolute; top: 10px; left: 10px; color: white; display: none; pointer-events: none; }
+        .panel { background: #1a1a1a; padding: 25px; border-radius: 15px; text-align: center; border: 2px solid #007bff; width: 300px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: white; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; }
+        
+        /* Joysticks */
+        #joystick-move { position: absolute; bottom: 50px; left: 50px; width: 150px; height: 150px; z-index: 20; }
+        #joystick-look { position: absolute; bottom: 50px; right: 50px; width: 150px; height: 150px; z-index: 20; }
+        
+        #hud { position: absolute; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; pointer-events: none; display: none; }
+        #weapon-dock { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; z-index: 30; }
+        .weapon-btn { width: 55px; height: 55px; background: rgba(50,50,50,0.8); border: 2px solid #555; color: white; border-radius: 10px; font-size: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .active-weapon { border-color: #007bff; background: rgba(0,123,255,0.3); }
+        #fire-btn { position: absolute; bottom: 220px; right: 75px; width: 80px; height: 80px; background: rgba(255,0,0,0.5); border: 3px solid white; border-radius: 50%; display: none; justify-content: center; align-items: center; color: white; font-weight: bold; z-index: 30; -webkit-user-select: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: lime; font-size: 24px; pointer-events: none; display: none; }
     </style>
 </head>
 <body>
     <div id="ui-container">
         <div id="auth-panel" class="panel">
-            <h2 style="color:white">BATTLE 3D</h2>
-            <input type="email" id="email" placeholder="Email" autocapitalize="none">
-            <input type="password" id="password" placeholder="Contraseña">
-            <button onclick="handleAuth()">ENTRAR / REGISTRAR</button>
-            <button class="link-btn" onclick="resetPassword()">¿Olvidaste tu contraseña?</button>
+            <h2 style="color:white">WARZONE MOBILE</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Pass">
+            <button onclick="handleAuth()">ENTRAR</button>
         </div>
         <div id="room-panel" class="panel" style="display:none">
             <h2 style="color:white">SALA</h2>
-            <button onclick="window.createRoom()" style="background:#28a745">CREAR SALA</button>
-            <div style="color:gray; margin:10px">O</div>
-            <input type="text" id="roomCodeInput" placeholder="CÓDIGO" style="text-align:center">
+            <button onclick="window.createRoom()" style="background:#28a745">CREAR PARTIDA</button>
+            <input type="text" id="roomCodeInput" placeholder="CÓDIGO">
             <button onclick="window.joinRoom()">UNIRSE</button>
         </div>
     </div>
 
-    <div id="crosshair"></div>
-    <div id="fire-btn" ontouchstart="window.shoot()">FIRE</div>
-    <div id="game-info">SALA: <span id="currentRoomCode"></span></div>
+    <div id="hud"><b>SCORE</b><div id="scores"></div></div>
+    <div id="crosshair">+</div>
+    <div id="weapon-dock">
+        <div class="weapon-btn active-weapon" id="w1" onclick="setWeapon(0)">🔫<br>PISTOLA</div>
+        <div class="weapon-btn" id="w2" onclick="setWeapon(1)">💥<br>ESCOPETA</div>
+        <div class="weapon-btn" id="w3" onclick="setWeapon(2)">🎯<br>SNIPER</div>
+    </div>
 
+    <div id="joystick-move"></div>
+    <div id="joystick-look"></div>
+    <div id="fire-btn" ontouchstart="window.shoot()">FIRE</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.1/nipplejs.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
+    <script src="game.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBLUU7XWS6TTByiGd-rtBCPZNzKvvRcL9Q",
@@ -51,38 +65,21 @@
             appId: "1:714273620829:web:1e8d68161db2711270deb4"
         };
         firebase.initializeApp(firebaseConfig);
-
         async function handleAuth() {
-            const e = document.getElementById('email').value.trim().toLowerCase();
+            const e = document.getElementById('email').value.trim();
             const p = document.getElementById('password').value;
             try {
                 await firebase.auth().signInWithEmailAndPassword(e,p);
-                enterGame();
+                document.getElementById('auth-panel').style.display='none';
+                document.getElementById('room-panel').style.display='block';
             } catch(err) {
-                if(err.code === 'auth/user-not-found' || err.code === 'auth/invalid-login-credentials' || err.code === 'auth/invalid-credential'){
-                    try {
-                        await firebase.auth().createUserWithEmailAndPassword(e, p);
-                        alert("¡Cuenta creada!");
-                        enterGame();
-                    } catch(e2) { alert(e2.message); }
-                } else { alert(err.message); }
+                try {
+                    await firebase.auth().createUserWithEmailAndPassword(e,p);
+                    document.getElementById('auth-panel').style.display='none';
+                    document.getElementById('room-panel').style.display='block';
+                } catch(e2) { alert(e2.message); }
             }
         }
-
-        function enterGame() {
-            document.getElementById('auth-panel').style.display='none';
-            document.getElementById('room-panel').style.display='block';
-        }
-
-        async function resetPassword() {
-            const e = document.getElementById('email').value.trim().toLowerCase();
-            if(!e) return alert("Escribe tu email primero");
-            try {
-                await firebase.auth().sendPasswordResetEmail(e);
-                alert("Correo de restablecimiento enviado.");
-            } catch(err) { alert(err.message); }
-        }
     </script>
-    <script src="game.js"></script>
 </body>
 </html>
