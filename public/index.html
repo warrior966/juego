@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Battle iPad - Auth</title>
+    <title>3D Battle iPad</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; }
-        #ui-container { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.85); z-index: 100; }
+        #ui-container { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); z-index: 100; }
         .panel { background: #222; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #007bff; width: 280px; }
         input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; font-size: 16px; background: #333; color: white; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .link-btn { background: none; color: #007bff; border: none; font-size: 14px; margin-top: 10px; text-decoration: underline; cursor: pointer; }
-        #verify-panel { display: none; color: white; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .link-btn { background: none; color: #007bff; border: none; font-size: 14px; margin-top: 15px; text-decoration: underline; cursor: pointer; }
         #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; }
         #fire-btn { position: absolute; bottom: 40px; right: 40px; width: 90px; height: 90px; background: rgba(255,0,0,0.6); border-radius: 50%; display: none; justify-content: center; align-items: center; border: 3px solid white; color: white; font-weight: bold; -webkit-user-select: none; z-index: 10; }
         #game-info { position: absolute; top: 10px; left: 10px; color: white; display: none; pointer-events: none; }
@@ -26,15 +25,6 @@
             <button onclick="handleAuth()">ENTRAR / REGISTRAR</button>
             <button class="link-btn" onclick="resetPassword()">¿Olvidaste tu contraseña?</button>
         </div>
-
-        <div id="verify-panel" class="panel">
-            <h2 style="color:white">VERIFICA TU EMAIL</h2>
-            <p style="color:#ccc; font-size: 14px;">Hemos enviado un link a tu correo. Por favor, confírmalo y luego pulsa el botón de abajo.</p>
-            <button onclick="checkVerification()" style="background:#28a745">¡YA HE VERIFICADO!</button>
-            <button class="link-btn" onclick="resendVerifyEmail()">Reenviar correo de validación</button>
-            <button class="link-btn" style="color:gray" onclick="location.reload()">Volver atrás</button>
-        </div>
-
         <div id="room-panel" class="panel" style="display:none">
             <h2 style="color:white">SALA</h2>
             <button onclick="window.createRoom()" style="background:#28a745">CREAR SALA</button>
@@ -66,50 +56,21 @@
             const e = document.getElementById('email').value.trim().toLowerCase();
             const p = document.getElementById('password').value;
             try {
-                const userCredential = await firebase.auth().signInWithEmailAndPassword(e,p);
-                const user = userCredential.user;
-
-                if (user.emailVerified) {
-                    showRoomPanel();
-                } else {
-                    showVerifyPanel();
-                }
+                await firebase.auth().signInWithEmailAndPassword(e,p);
+                enterGame();
             } catch(err) {
                 if(err.code === 'auth/user-not-found' || err.code === 'auth/invalid-login-credentials' || err.code === 'auth/invalid-credential'){
                     try {
-                        const userCredential = await firebase.auth().createUserWithEmailAndPassword(e, p);
-                        await userCredential.user.sendEmailVerification();
-                        alert("Cuenta creada. Por favor, verifica tu correo antes de entrar.");
-                        showVerifyPanel();
+                        await firebase.auth().createUserWithEmailAndPassword(e, p);
+                        alert("¡Cuenta creada!");
+                        enterGame();
                     } catch(e2) { alert(e2.message); }
                 } else { alert(err.message); }
             }
         }
 
-        async function checkVerification() {
-            await firebase.auth().currentUser.reload();
-            if (firebase.auth().currentUser.emailVerified) {
-                showRoomPanel();
-            } else {
-                alert("Aún no has verificado tu correo. Revisa tu bandeja de entrada.");
-            }
-        }
-
-        async function resendVerifyEmail() {
-            try {
-                await firebase.auth().currentUser.sendEmailVerification();
-                alert("Correo de verificación reenviado.");
-            } catch(e) { alert(e.message); }
-        }
-
-        function showVerifyPanel() {
+        function enterGame() {
             document.getElementById('auth-panel').style.display='none';
-            document.getElementById('verify-panel').style.display='block';
-        }
-
-        function showRoomPanel() {
-            document.getElementById('auth-panel').style.display='none';
-            document.getElementById('verify-panel').style.display='none';
             document.getElementById('room-panel').style.display='block';
         }
 
