@@ -1,72 +1,236 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WARZONE 3D MOBILE</title>
+    <title>WARZONE 3D | EVOLUTION</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --neon: #00d4ff; --neon-red: #ff0055; }
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Rajdhani', sans-serif; touch-action: none; color: white; }
-        
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-red: #ff0055;
+            --glass: rgba(15, 15, 25, 0.85);
+        }
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #000; 
+            font-family: 'Rajdhani', sans-serif; 
+            touch-action: none; 
+            color: white;
+        }
+
+        /* Capa del motor 3D */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Contenedor de Interfaz (Login y Salas) */
         #ui-container { 
-            position: absolute; width: 100%; height: 100%; display: flex; 
-            justify-content: center; align-items: center; z-index: 1000;
-            background: radial-gradient(circle, rgba(0,212,255,0.1) 0%, #000 100%);
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: radial-gradient(circle, rgba(0,212,255,0.15) 0%, rgba(0,0,0,1) 100%);
+            z-index: 1000; 
             backdrop-filter: blur(10px);
+            transition: opacity 0.5s;
         }
 
         .panel { 
-            background: rgba(15,15,25,0.9); padding: 40px; border-radius: 20px; 
-            border: 1px solid var(--neon); width: 320px; text-align: center;
+            background: var(--glass); 
+            padding: 40px; 
+            border-radius: 20px; 
+            text-align: center; 
+            border: 1px solid rgba(0, 212, 255, 0.3); 
+            width: 320px; 
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
         }
 
-        h2 { font-family: 'Orbitron'; color: var(--neon); text-shadow: 0 0 10px var(--neon); margin-bottom: 25px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 15px; background: var(--neon); color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 10px; }
-        .btn-google { width: 100%; padding: 12px; background: transparent; color: white; border: 1px solid #555; border-radius: 8px; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        h2 { 
+            font-family: 'Orbitron', sans-serif; 
+            font-size: 22px; 
+            margin-bottom: 25px; 
+            color: var(--neon-blue); 
+            text-shadow: 0 0 10px var(--neon-blue);
+            letter-spacing: 3px;
+        }
 
-        /* Controles de Juego */
-        #joystick-move { position: absolute; bottom: 50px; left: 50px; width: 150px; height: 150px; z-index: 2000; display: none; }
-        #joystick-look { position: absolute; bottom: 50px; right: 50px; width: 150px; height: 150px; z-index: 2000; display: none; }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border: 1px solid #333; 
+            background: rgba(255,255,255,0.05); 
+            color: white; 
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .btn-main { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--neon-blue); 
+            color: #000; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .btn-google {
+            width: 100%; 
+            padding: 12px; 
+            background: transparent; 
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2); 
+            border-radius: 8px;
+            cursor: pointer; 
+            margin-top: 15px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px;
+        }
+
+        .divider { 
+            margin: 20px 0; 
+            color: #555; 
+            font-size: 12px; 
+            letter-spacing: 2px;
+        }
+
+        /* --- HUD Y CONTROLES IN-GAME --- */
+        #hud { 
+            position: absolute; 
+            top: 20px; 
+            right: 20px; 
+            background: rgba(0,0,0,0.7); 
+            padding: 15px; 
+            border-left: 4px solid var(--neon-blue);
+            display: none; 
+            z-index: 500;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        #weapon-dock { 
+            position: absolute; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            display: none; 
+            gap: 10px; 
+            z-index: 500; 
+        }
+
+        .weapon-btn { 
+            width: 65px; 
+            height: 65px; 
+            background: rgba(20,20,25,0.9); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            color: white; 
+            border-radius: 12px;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .active-weapon { 
+            border: 2px solid var(--neon-blue); 
+            box-shadow: 0 0 15px var(--neon-blue); 
+        }
+
+        /* JOYSTICKS (Prioridad Máxima) */
+        #joystick-move, #joystick-look { 
+            position: absolute; 
+            bottom: 50px; 
+            width: 150px; 
+            height: 150px; 
+            z-index: 2000; 
+            display: none;
+        }
+        #joystick-move { left: 50px; }
+        #joystick-look { right: 50px; }
+
         #fire-btn { 
-            position: absolute; bottom: 220px; right: 75px; width: 90px; height: 90px; 
-            background: var(--neon-red); border: 4px solid white; border-radius: 50%; 
-            display: none; justify-content: center; align-items: center; font-weight: bold; z-index: 2000;
+            position: absolute; 
+            bottom: 220px; 
+            right: 75px; 
+            width: 90px; 
+            height: 90px; 
+            background: var(--neon-red);
+            border: 4px solid white; 
+            border-radius: 50%; 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            font-weight: 900;
+            box-shadow: 0 0 20px rgba(255,0,85,0.5); 
+            z-index: 2000;
+            color: white;
         }
-        
-        #hud { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-left: 3px solid var(--neon); display: none; z-index: 500; font-family: 'Orbitron'; font-size: 12px; }
-        #weapon-dock { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; z-index: 500; }
-        .weapon-btn { width: 60px; height: 60px; background: #111; border: 1px solid #444; color: white; border-radius: 10px; font-size: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .active-weapon { border-color: var(--neon); box-shadow: 0 0 10px var(--neon); }
-        #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #0f0; font-size: 24px; pointer-events: none; display: none; z-index: 500; }
+
+        #crosshair { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            color: var(--neon-blue); 
+            font-size: 30px; 
+            pointer-events: none; 
+            display: none; 
+            z-index: 500;
+        }
     </style>
 </head>
 <body>
+
     <div id="ui-container">
         <div id="auth-panel" class="panel">
-            <h2>LOGIN</h2>
-            <input type="email" id="email" placeholder="EMAIL">
-            <input type="password" id="password" placeholder="PASSWORD">
-            <button class="btn-main" onclick="handleAuth()">LOGIN</button>
+            <h2>OPERATIONS</h2>
+            <input type="email" id="email" placeholder="EMAIL_ADDRESS">
+            <input type="password" id="password" placeholder="ACCESS_CODE">
+            <button class="btn-main" onclick="handleAuth()">INITIALIZE</button>
+            <div class="divider">OR</div>
             <button class="btn-google" onclick="loginWithGoogle()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18"> GOOGLE
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18"> GOOGLE_ID
             </button>
         </div>
+
         <div id="room-panel" class="panel" style="display:none">
-            <h2>SALA</h2>
-            <button class="btn-main" style="background:#28a745" onclick="window.createRoom()">CREAR SALA</button>
-            <input type="text" id="roomCodeInput" placeholder="CÓDIGO">
-            <button class="btn-main" onclick="window.joinRoom()">UNIRSE</button>
+            <h2>COMMAND_CENTER</h2>
+            <button class="btn-main" style="background:#28a745" onclick="window.createRoom()">CREATE MISSION</button>
+            <div class="divider">OR JOIN SECTOR</div>
+            <input type="text" id="roomCodeInput" placeholder="SECTOR_CODE" maxlength="5">
+            <button class="btn-main" onclick="window.joinRoom()">DEPLOY</button>
         </div>
     </div>
 
-    <div id="hud"><b>SCORE</b><div id="scores"></div></div>
-    <div id="crosshair">+</div>
+    <div id="hud">
+        <div style="font-size: 10px; color: var(--neon-blue);">SQUAD_STATS</div>
+        <hr style="border:0; border-top:1px solid #333;">
+        <div id="scores"></div>
+    </div>
+
+    <div id="crosshair">⌖</div>
+    
     <div id="weapon-dock">
-        <div class="weapon-btn active-weapon" onclick="setWeapon(0)">🔫<br>PISTOL</div>
-        <div class="weapon-btn" onclick="setWeapon(1)">💥<br>SHOTGUN</div>
-        <div class="weapon-btn" onclick="setWeapon(2)">🎯<br>SNIPER</div>
+        <div class="weapon-btn active-weapon" id="w1" onclick="setWeapon(0)">🔫<br>LIGHT</div>
+        <div class="weapon-btn" id="w2" onclick="setWeapon(1)">💥<br>HEAVY</div>
+        <div class="weapon-btn" id="w3" onclick="setWeapon(2)">🎯<br>SNIPER</div>
     </div>
 
     <div id="joystick-move"></div>
@@ -78,8 +242,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
     <script src="game.js"></script>
+
     <script>
+        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBLUU7XWS6TTByiGd-rtBCPZNzKvvRcL9Q",
             authDomain: "juego-b85b7.firebaseapp.com",
@@ -87,18 +254,38 @@
             appId: "1:714273620829:web:1e8d68161db2711270deb4"
         };
         firebase.initializeApp(firebaseConfig);
+
+        // LOGIN TRADICIONAL
         async function handleAuth() {
-            const e = document.getElementById('email').value;
+            const e = document.getElementById('email').value.trim();
             const p = document.getElementById('password').value;
-            try { await firebase.auth().signInWithEmailAndPassword(e,p); grant(); } catch(err) {
-                try { await firebase.auth().createUserWithEmailAndPassword(e,p); grant(); } catch(e2) { alert(e2.message); }
+            if(!e || !p) return alert("Completa los datos");
+            try {
+                await firebase.auth().signInWithEmailAndPassword(e,p);
+                accessGranted();
+            } catch(err) {
+                try {
+                    await firebase.auth().createUserWithEmailAndPassword(e,p);
+                    accessGranted();
+                } catch(e2) { alert(e2.message); }
             }
         }
+
+        // LOGIN GOOGLE
         async function loginWithGoogle() {
-            const p = new firebase.auth.GoogleAuthProvider();
-            try { await firebase.auth().signInWithPopup(p); grant(); } catch(e) { alert(e.message); }
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                await firebase.auth().signInWithPopup(provider);
+                accessGranted();
+            } catch (error) {
+                alert("Google Error: " + error.message);
+            }
         }
-        function grant() { document.getElementById('auth-panel').style.display='none'; document.getElementById('room-panel').style.display='block'; }
+
+        function accessGranted() {
+            document.getElementById('auth-panel').style.display='none';
+            document.getElementById('room-panel').style.display='block';
+        }
     </script>
 </body>
 </html>
